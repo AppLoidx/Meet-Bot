@@ -18,7 +18,7 @@ public final class ClassLoader {
 
     public static Set<Class<?>> getClassesAnnotatedWith(Class<? extends Annotation> clazz) {
         ClassPathScanningCandidateComponentProvider scanner =
-                new ClassPathScanningCandidateComponentProvider(true);
+                new ClassPathScanningCandidateComponentProvider(false);
         scanner.addIncludeFilter(new AnnotationTypeFilter(clazz));
 
         Set<Class<?>> annotatedLoggers = new HashSet<>();
