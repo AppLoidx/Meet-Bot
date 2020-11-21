@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
+import org.telegram.telegrambots.meta.api.interfaces.BotApiObject;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -29,9 +30,13 @@ public class MeetBot extends TelegramLongPollingBot {
     private final CommandService commandService;
     private final SequenceService sequenceService;
 
+    // necessary measure
+    public static MeetBot instance;
+
     public MeetBot(CommandService commandService, SequenceService sequenceService) {
         this.commandService = commandService;
         this.sequenceService = sequenceService;
+        instance = this;
     }
 
     @Override
@@ -56,13 +61,13 @@ public class MeetBot extends TelegramLongPollingBot {
                 message = update.getMessage();
             }
 
-            if (message != null && message.hasText()) {
+            if (message != null) {
 
                 // run "before" loggers
                 commandService.findLoggers(message.getText(), ExecutionTime.BEFORE)
                         .forEach(logger -> logger.execute(message));
 
-                Optional<BotApiMethod<Message>> sequenceHandle = sequenceService.handle(message);
+                Optional<BotApiMethod<? extends BotApiObject>> sequenceHandle = sequenceService.handle(message);
 
                 if (sequenceHandle.isPresent()) {
                     log.debug("Found handler");
@@ -83,4 +88,7 @@ public class MeetBot extends TelegramLongPollingBot {
             e.printStackTrace();
         }
     }
+
+
+
 }

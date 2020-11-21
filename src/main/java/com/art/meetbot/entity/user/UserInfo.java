@@ -2,10 +2,7 @@ package com.art.meetbot.entity.user;
 
 import lombok.Data;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-import javax.persistence.OneToOne;
+import javax.persistence.*;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -22,9 +19,9 @@ public class UserInfo {
     private String description;
     private Sex sex;
     private int birthYear;
-    private byte[] photo;
+    private String photoId;
 
-    @OneToOne
+    @OneToOne(cascade = CascadeType.ALL)
     private SocialNetworks socialNetworks;
 
     @Override

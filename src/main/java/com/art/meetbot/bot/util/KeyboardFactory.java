@@ -28,6 +28,20 @@ public final class KeyboardFactory {
         return markup;
     }
 
+    public static ReplyKeyboard selectGender() {
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> rowList = new ArrayList<>();
+
+        rowList.add(List.of(
+                button("male", "male"),
+                button("female", "female"))
+        );
+
+        markup.setKeyboard(rowList);
+
+        return markup;
+    }
+
     private static InlineKeyboardButton button(String text, String callbackData) {
         return InlineKeyboardButton.builder()
                 .text(text)

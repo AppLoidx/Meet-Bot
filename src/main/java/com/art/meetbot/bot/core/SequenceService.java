@@ -7,6 +7,7 @@ import com.art.meetbot.entity.repo.register.CommandRegRepo;
 import lombok.extern.slf4j.Slf4j;
 import org.checkerframework.checker.nullness.Opt;
 import org.springframework.stereotype.Service;
+import org.telegram.telegrambots.meta.api.interfaces.BotApiObject;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.objects.Message;
 
@@ -35,7 +36,7 @@ public class SequenceService {
         seqMap.putAll(sequenceLoader.load());
     }
 
-    public Optional<BotApiMethod<Message>> handle(Message message) {
+    public Optional<BotApiMethod<? extends BotApiObject>> handle(Message message) {
         Optional<CommandReg> byChatId = commandRegRepo.findByChatId(message.getChatId());
 
 

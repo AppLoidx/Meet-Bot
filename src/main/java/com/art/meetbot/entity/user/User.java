@@ -2,11 +2,9 @@ package com.art.meetbot.entity.user;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.checkerframework.common.aliasing.qual.Unique;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-import javax.persistence.OneToOne;
+import javax.persistence.*;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -21,9 +19,10 @@ public class User {
     @GeneratedValue
     private UUID uuid;
 
+    @Unique
     private String telegramId;
 
-    @OneToOne
+    @OneToOne(cascade = CascadeType.ALL)
     private UserInfo userInfo;
 
     @Override
