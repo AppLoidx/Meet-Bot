@@ -2,6 +2,7 @@ package com.art.meetbot.bot.commands;
 
 import com.art.meetbot.bot.handle.Handler;
 import com.art.meetbot.bot.handle.RequestHandler;
+import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
@@ -10,6 +11,7 @@ import org.telegram.telegrambots.meta.api.objects.Message;
  * @author Arthur Kupriyanov on 20.11.2020
  */
 @Handler("hello")
+@Component
 public class HelloCommand implements RequestHandler {
     @Override
     public BotApiMethod<Message> execute(Message message) {

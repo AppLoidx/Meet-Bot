@@ -24,8 +24,12 @@ import java.util.Set;
 public class CommandService {
     private static final Map<String, RequestHandler> commandsMap = new HashMap<>();
     private static final Map<String, Set<RequestLogger>> loggersMap = new HashMap<>();
+    private final CommandLoader commandLoader;
+    private final LogLoader logLoader;
 
-    private CommandService() {
+    private CommandService(CommandLoader commandLoader, LogLoader logLoader) {
+        this.commandLoader = commandLoader;
+        this.logLoader = logLoader;
     }
 
     @PostConstruct
@@ -34,13 +38,13 @@ public class CommandService {
         initLoggers();
     }
 
-    private static void initCommands() {
-        commandsMap.putAll(CommandLoader.readCommands());
+    private void initCommands() {
+        commandsMap.putAll(commandLoader.readCommands());
         log.info("Total commands : " + commandsMap.toString());
     }
 
-    private static void initLoggers() {
-        loggersMap.putAll(LogLoader.loadLoggers());
+    private void initLoggers() {
+        loggersMap.putAll(logLoader.loadLoggers());
     }
 
     public RequestHandler serve(String message) {

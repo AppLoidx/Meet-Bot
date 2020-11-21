@@ -1,6 +1,7 @@
 package com.art.meetbot.bot;
 
 import com.art.meetbot.bot.core.CommandService;
+import com.art.meetbot.bot.core.SequenceService;
 import com.art.meetbot.bot.handle.ExecutionTime;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -9,6 +10,8 @@ import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
+
+import java.util.Optional;
 
 /**
  * @author Arthur Kupriyanov on 20.11.2020
@@ -24,9 +27,11 @@ public class MeetBot extends TelegramLongPollingBot {
     private String name;
 
     private final CommandService commandService;
+    private final SequenceService sequenceService;
 
-    public MeetBot(CommandService commandService) {
+    public MeetBot(CommandService commandService, SequenceService sequenceService) {
         this.commandService = commandService;
+        this.sequenceService = sequenceService;
     }
 
     @Override
@@ -42,12 +47,28 @@ public class MeetBot extends TelegramLongPollingBot {
     @Override
     public void onUpdateReceived(Update update) {
         try {
-            Message message = update.getMessage();
+            final Message message;
+            if (update.hasCallbackQuery()) {
+
+                message = update.getCallbackQuery().getMessage();
+                message.setText(update.getCallbackQuery().getData());
+            } else {
+                message = update.getMessage();
+            }
+
             if (message != null && message.hasText()) {
 
                 // run "before" loggers
                 commandService.findLoggers(message.getText(), ExecutionTime.BEFORE)
                         .forEach(logger -> logger.execute(message));
+
+                Optional<BotApiMethod<Message>> sequenceHandle = sequenceService.handle(message);
+
+                if (sequenceHandle.isPresent()) {
+                    log.debug("Found handler");
+                    this.execute(sequenceHandle.get());
+                    return;
+                }
 
                 // command execution
                 BotApiMethod<Message> response;
