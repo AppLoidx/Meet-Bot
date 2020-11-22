@@ -16,11 +16,9 @@ import org.telegram.telegrambots.meta.api.objects.Message;
 @Slf4j
 public class CreateProfileCommand implements RequestHandler {
     private final CommandRegRepo commandRegRepo;
-    private final UserRepo userRepo;
 
     public CreateProfileCommand(CommandRegRepo commandRegRepo, UserRepo userRepo) {
         this.commandRegRepo = commandRegRepo;
-        this.userRepo = userRepo;
     }
 
     @Override
