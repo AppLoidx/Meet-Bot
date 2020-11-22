@@ -23,7 +23,7 @@ public class User {
     private String telegramId;
 
     @OneToOne(cascade = CascadeType.ALL)
-    private UserInfo userInfo;
+    private UserInfo userInfo = new UserInfo();
 
     @Override
     public boolean equals(Object o) {
