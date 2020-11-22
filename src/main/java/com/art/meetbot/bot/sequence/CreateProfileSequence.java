@@ -52,7 +52,8 @@ public class CreateProfileSequence implements SequenceHandler {
         NameSeqCache nameSeqCache =
                 nameSeqCacheRepo.findByChatId(message.getChatId()).orElse(new NameSeqCache(message.getChatId()));
 
-        User user = userRepo.findByTelegramId(message.getChatId().toString()).orElseGet(User::new);
+        User user = userRepo.findByTelegramId(message.getChatId().toString())
+                .orElse(new User(String.valueOf(message.getChatId())));
 
         switch (state) {
             case 0 -> {

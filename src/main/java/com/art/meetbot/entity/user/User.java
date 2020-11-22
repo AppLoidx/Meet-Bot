@@ -25,6 +25,10 @@ public class User {
     @OneToOne(cascade = CascadeType.ALL)
     private UserInfo userInfo = new UserInfo();
 
+    public User(String telegramId) {
+        this.telegramId = telegramId;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
