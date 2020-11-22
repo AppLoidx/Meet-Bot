@@ -5,7 +5,6 @@ import com.art.meetbot.bot.handle.SequenceHandler;
 import com.art.meetbot.entity.register.CommandReg;
 import com.art.meetbot.entity.repo.register.CommandRegRepo;
 import lombok.extern.slf4j.Slf4j;
-import org.checkerframework.checker.nullness.Opt;
 import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.meta.api.interfaces.BotApiObject;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;

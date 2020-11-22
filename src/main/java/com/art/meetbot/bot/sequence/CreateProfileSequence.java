@@ -4,14 +4,11 @@ import com.art.meetbot.bot.handle.Sequence;
 import com.art.meetbot.bot.handle.SequenceHandler;
 import com.art.meetbot.bot.util.KeyboardFactory;
 import com.art.meetbot.bot.util.MessageUtils;
-import com.art.meetbot.entity.cache.NameSeqCache;
 import com.art.meetbot.entity.register.CommandReg;
-import com.art.meetbot.entity.repo.cache.NameSeqCacheRepo;
 import com.art.meetbot.entity.repo.register.CommandRegRepo;
 import com.art.meetbot.entity.repo.user.UserRepo;
 import com.art.meetbot.entity.user.Sex;
 import com.art.meetbot.entity.user.User;
-import com.art.meetbot.entity.user.UserInfo;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.interfaces.BotApiObject;
@@ -28,17 +25,15 @@ import java.util.List;
 @Component
 public class CreateProfileSequence implements SequenceHandler {
     private final CommandRegRepo commandRegRepo;
-    private final NameSeqCacheRepo nameSeqCacheRepo;
     private final UserRepo userRepo;
 
-    public CreateProfileSequence(CommandRegRepo commandRegRepo, NameSeqCacheRepo nameSeqCacheRepo, UserRepo userRepo) {
+    public CreateProfileSequence(CommandRegRepo commandRegRepo, UserRepo userRepo) {
         this.commandRegRepo = commandRegRepo;
-        this.nameSeqCacheRepo = nameSeqCacheRepo;
         this.userRepo = userRepo;
     }
 
-    //A lot of duplicate code at this method
-    //TODO delete duplicate code
+    // A lot of duplicate code at this method
+    // TODO delete duplicate code
     @Override
     public BotApiMethod<? extends BotApiObject> handleCommand(Message message, int state) {
         log.debug("Received command " + message.getText() + " with state : " + state);
@@ -48,22 +43,25 @@ public class CreateProfileSequence implements SequenceHandler {
                     log.warn("Command reg is not found for chat " + message.getChatId());
                     return new CommandReg();
                 });
-        NameSeqCache nameSeqCache =
-                nameSeqCacheRepo.findByChatId(message.getChatId()).orElse(new NameSeqCache(message.getChatId()));
 
-        User user = userRepo.findByTelegramId(message.getChatId().toString()).orElseGet(User::new);
+        User user = userRepo.findByTelegramId(message.getChatId().toString())
+                .orElse(new User(String.valueOf(message.getChatId())));
 
         switch (state) {
             case 0 -> {
-                nameSeqCache.setAns1(message.getText());
-                nameSeqCacheRepo.save(nameSeqCache);
+                user.getUserInfo().setName(message.getText());
                 changeState(1, commandReg);
-                user.setUserInfo(new UserInfo());
+                userRepo.save(user);
+                return MessageUtils.sendText("Your birth date: ", message);
+            }
+            case 1 -> {
 
                 try {
                     user.getUserInfo().setBirthYear(Integer.parseInt(message.getText()));
+                    changeState(2, commandReg);
                 } catch (NumberFormatException ignored) {
-                    log.debug("user send not a year of birth with id" + message.getChatId());
+                    log.debug("user send not a year of birth with id " + message.getChatId());
+                    return MessageUtils.sendText("Please, input a number!", message);
                 }
 
                 userRepo.save(user);
@@ -73,43 +71,59 @@ public class CreateProfileSequence implements SequenceHandler {
                         .replyMarkup(KeyboardFactory.selectGender())
                         .build();
             }
-            case 1 -> {
-                nameSeqCache.setAns2(message.getText());
-                nameSeqCacheRepo.save(nameSeqCache);
-                changeState(2, commandReg);
+            case 2 -> {
+                changeState(3, commandReg);
                 user.getUserInfo().setSex(Sex.getGender(message.getText()));
 
                 userRepo.save(user);
-                return MessageUtils.sendText("Send your photo", message);
+                return MessageUtils.sendText("Describe yourself: (who you are, what do you like and etc)", message);
             }
-            case 2 -> {
-                if (message.hasPhoto()) {
-                    receivedPhoto(message);
-                }
-
+            case 3 -> {
+                user.getUserInfo().setDescription(message.getText());
                 userRepo.save(user);
-                deleteSeq(commandReg, nameSeqCache);
+                changeState(4, commandReg);
                 return SendMessage.builder()
-                        .text("Profile ready")
+                        .text("Add your profile photo." +
+                              "\nIf you don't want to add photo - you can answer \"no\"")
                         .chatId(String.valueOf(message.getChatId()))
+                        .replyMarkup(KeyboardFactory.no())
                         .build();
             }
+
+            case 4 -> {
+                if ("no".equals(message.getText())) {
+                    commandRegRepo.delete(commandReg);
+                    return MessageUtils.sendText("Your profile ready without photo. You can add it later", message);
+                }
+
+                if (message.hasPhoto()) {
+                    log.debug("Message has a photo");
+                    receivedPhoto(message, user);
+                    userRepo.save(user);
+                    commandRegRepo.delete(commandReg);
+                    return MessageUtils.sendText("Successfully created profile", message);
+                } else {
+                    return SendMessage.builder()
+                            .text("Fail to read your photo. Please, try again")
+                            .chatId(String.valueOf(message.getChatId()))
+                            .replyMarkup(KeyboardFactory.no())  // it's important to add no button
+                            .build();
+                }
+
+            }
+
+            default -> commandRegRepo.delete(commandReg);
         }
 
         log.warn("something strange");
-        deleteSeq(commandReg, nameSeqCache);
+        commandRegRepo.delete(commandReg);
         return SendMessage.builder()
                 .text("Command not found")
                 .chatId(String.valueOf(message.getChatId()))
                 .build();
     }
 
-    private void deleteSeq(CommandReg commandReg, NameSeqCache nameSeqCache) {
-        nameSeqCacheRepo.delete(nameSeqCache);
-        commandRegRepo.delete(commandReg);
-    }
-
-    private void receivedPhoto(Message message) {
+    private void receivedPhoto(Message message, User user) {
         List<PhotoSize> photos = message.getPhoto();
         // Get largest photo's file_id
         String photo_id = photos.stream()
@@ -117,17 +131,9 @@ public class CreateProfileSequence implements SequenceHandler {
                 .orElseThrow().getFileId();
 
         log.debug("Upload photo to database");
-        User dbUser = userRepo.findByTelegramId(message.getChatId().toString()).orElseGet(() -> {
-            log.warn("User with " + message.getChatId() + " not founded in db");
-            User user = new User();
-            user.setTelegramId(message.getChatId().toString());
-            user.setUserInfo(new UserInfo());
-            userRepo.save(user);
-            return user;
-        });
 
-        dbUser.getUserInfo().setPhotoId(photo_id);
-        userRepo.save(dbUser);
+        user.getUserInfo().setPhotoId(photo_id);
+        userRepo.save(user);
     }
 
     private void changeState(int newState, CommandReg commandReg) {

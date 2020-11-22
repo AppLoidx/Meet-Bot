@@ -3,7 +3,6 @@ package com.art.meetbot.bot.util;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
-import org.telegram.telegrambots.meta.exceptions.TelegramApiValidationException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,33 +14,41 @@ public final class KeyboardFactory {
     private KeyboardFactory() {}
 
     public static ReplyKeyboard yesNo() {
-        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
-        List<List<InlineKeyboardButton>> rowList = new ArrayList<>();
 
-        rowList.add(List.of(
+        return simpleMarkupFrom(List.of(
                 button("да", "yes"),
-                button("нет", "no"))
+                button("нет", "no")
+                )
         );
-
-        markup.setKeyboard(rowList);
-
-        return markup;
     }
 
     public static ReplyKeyboard selectGender() {
-        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
-        List<List<InlineKeyboardButton>> rowList = new ArrayList<>();
 
-        rowList.add(List.of(
+        return simpleMarkupFrom(List.of(
                 button("male", "male"),
                 button("female", "female"))
         );
+    }
 
-        markup.setKeyboard(rowList);
+    public static ReplyKeyboard no() {
+        return simpleMarkupFrom(List.of(
+                button("no", "no")
+        ));
+    }
 
+    private static InlineKeyboardMarkup simpleMarkupFrom(List<InlineKeyboardButton> buttons) {
+        InlineKeyboardMarkup markup = new InlineKeyboardMarkup();
+        markup.setKeyboard(createRowListFrom(buttons));
         return markup;
     }
 
+
+
+    private static List<List<InlineKeyboardButton>> createRowListFrom(List<InlineKeyboardButton> buttons) {
+        List<List<InlineKeyboardButton>> rowList = new ArrayList<>();
+        rowList.add(buttons);
+        return rowList;
+    }
     private static InlineKeyboardButton button(String text, String callbackData) {
         return InlineKeyboardButton.builder()
                 .text(text)

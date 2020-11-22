@@ -17,7 +17,11 @@ public class UserInfo {
     private UUID uuid;
 
     private String description;
+
     private Sex sex;
+
+    private String name;
+
     private int birthYear;
     private String photoId;
 
