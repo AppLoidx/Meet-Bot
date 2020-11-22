@@ -37,6 +37,7 @@ public class CreateProfileCommand implements RequestHandler {
         userRepo.findByTelegramId(String.valueOf(message.getChatId()))
                 .ifPresent(userRepo::delete);
 
-        return MessageUtils.sendText("Let's start creating a profile. \nAnswer a series of questions. \n\nRemember that this data will be seen by other users \n Old profile deleted \n Enter your date of birth", message);
+        return MessageUtils.sendText("Let's start creating a profile. \nAnswer a series of questions. \n\nRemember that this data will be seen by other users \n Old profile deleted \n " +
+                                     "\nEnter your name:", message);
     }
 }
