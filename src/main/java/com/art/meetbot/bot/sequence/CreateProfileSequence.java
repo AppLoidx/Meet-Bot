@@ -9,7 +9,6 @@ import com.art.meetbot.entity.repo.register.CommandRegRepo;
 import com.art.meetbot.entity.repo.user.UserRepo;
 import com.art.meetbot.entity.user.Sex;
 import com.art.meetbot.entity.user.User;
-import com.art.meetbot.entity.user.UserInfo;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.interfaces.BotApiObject;
@@ -33,8 +32,8 @@ public class CreateProfileSequence implements SequenceHandler {
         this.userRepo = userRepo;
     }
 
-    //A lot of duplicate code at this method
-    //TODO delete duplicate code
+    // A lot of duplicate code at this method
+    // TODO delete duplicate code
     @Override
     public BotApiMethod<? extends BotApiObject> handleCommand(Message message, int state) {
         log.debug("Received command " + message.getText() + " with state : " + state);
@@ -50,12 +49,16 @@ public class CreateProfileSequence implements SequenceHandler {
 
         switch (state) {
             case 0 -> {
-
-                user.setUserInfo(new UserInfo());
+                user.getUserInfo().setName(message.getText());
+                changeState(1, commandReg);
+                userRepo.save(user);
+                return MessageUtils.sendText("Your birth date: ", message);
+            }
+            case 1 -> {
 
                 try {
                     user.getUserInfo().setBirthYear(Integer.parseInt(message.getText()));
-                    changeState(1, commandReg);
+                    changeState(2, commandReg);
                 } catch (NumberFormatException ignored) {
                     log.debug("user send not a year of birth with id " + message.getChatId());
                     return MessageUtils.sendText("Please, input a number!", message);
@@ -68,19 +71,28 @@ public class CreateProfileSequence implements SequenceHandler {
                         .replyMarkup(KeyboardFactory.selectGender())
                         .build();
             }
-            case 1 -> {
-                changeState(2, commandReg);
+            case 2 -> {
+                changeState(3, commandReg);
                 user.getUserInfo().setSex(Sex.getGender(message.getText()));
 
                 userRepo.save(user);
+                return MessageUtils.sendText("Describe yourself: (who you are, what do you like and etc)", message);
+            }
+            case 3 -> {
+                user.getUserInfo().setDescription(message.getText());
+                userRepo.save(user);
+                changeState(4, commandReg);
                 return SendMessage.builder()
-                        .text("Send your photo")
+                        .text("Add your profile photo." +
+                              "\nIf you don't want to add photo - you can answer \"no\"")
                         .chatId(String.valueOf(message.getChatId()))
                         .replyMarkup(KeyboardFactory.no())
                         .build();
             }
-            case 2 -> {
+
+            case 4 -> {
                 if ("no".equals(message.getText())) {
+                    commandRegRepo.delete(commandReg);
                     return MessageUtils.sendText("Your profile ready without photo. You can add it later", message);
                 }
 
@@ -99,6 +111,8 @@ public class CreateProfileSequence implements SequenceHandler {
                 }
 
             }
+
+            default -> commandRegRepo.delete(commandReg);
         }
 
         log.warn("something strange");
