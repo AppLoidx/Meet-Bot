@@ -84,19 +84,31 @@ public class CreateProfileSequence implements SequenceHandler {
                 user.getUserInfo().setSex(Sex.getGender(message.getText()));
 
                 userRepo.save(user);
-                return MessageUtils.sendText("Send your photo", message);
+                return SendMessage.builder()
+                        .text("Send your photo")
+                        .chatId(String.valueOf(message.getChatId()))
+                        .replyMarkup(KeyboardFactory.no())
+                        .build();
             }
             case 2 -> {
-                if (message.hasPhoto()) {
-                    receivedPhoto(message);
+                if ("no".equals(message.getText())) {
+                    return MessageUtils.sendText("Your profile ready without photo. You can add it later", message);
                 }
 
-                userRepo.save(user);
-                deleteSeq(commandReg, nameSeqCache);
-                return SendMessage.builder()
-                        .text("Profile ready")
-                        .chatId(String.valueOf(message.getChatId()))
-                        .build();
+                if (message.hasPhoto()) {
+                    log.debug("Message has a photo");
+                    receivedPhoto(message, user);
+                    userRepo.save(user);
+                    deleteSeq(commandReg, nameSeqCache);
+                    return MessageUtils.sendText("Successfully created profile", message);
+                } else {
+                    return SendMessage.builder()
+                            .text("Fail to read your photo. Please, try again")
+                            .chatId(String.valueOf(message.getChatId()))
+                            .replyMarkup(KeyboardFactory.no())  // it's important to add no button
+                            .build();
+                }
+
             }
         }
 
@@ -113,7 +125,7 @@ public class CreateProfileSequence implements SequenceHandler {
         commandRegRepo.delete(commandReg);
     }
 
-    private void receivedPhoto(Message message) {
+    private void receivedPhoto(Message message, User user) {
         List<PhotoSize> photos = message.getPhoto();
         // Get largest photo's file_id
         String photo_id = photos.stream()
@@ -121,17 +133,9 @@ public class CreateProfileSequence implements SequenceHandler {
                 .orElseThrow().getFileId();
 
         log.debug("Upload photo to database");
-        User dbUser = userRepo.findByTelegramId(message.getChatId().toString()).orElseGet(() -> {
-            log.warn("User with " + message.getChatId() + " not founded in db");
-            User user = new User();
-            user.setTelegramId(message.getChatId().toString());
-            user.setUserInfo(new UserInfo());
-            userRepo.save(user);
-            return user;
-        });
 
-        dbUser.getUserInfo().setPhotoId(photo_id);
-        userRepo.save(dbUser);
+        user.getUserInfo().setPhotoId(photo_id);
+        userRepo.save(user);
     }
 
     private void changeState(int newState, CommandReg commandReg) {

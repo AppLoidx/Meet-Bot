@@ -18,7 +18,6 @@ public class UserInfo {
 
     private String description;
 
-    @Enumerated(EnumType.STRING)
     private Sex sex;
 
     private int birthYear;
