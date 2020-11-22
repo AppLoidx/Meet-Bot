@@ -23,7 +23,6 @@ public final class KeyboardFactory {
     }
 
     public static ReplyKeyboard selectGender() {
-
         return simpleMarkupFrom(List.of(
                 button("male", "male"),
                 button("female", "female"))
@@ -34,6 +33,13 @@ public final class KeyboardFactory {
         return simpleMarkupFrom(List.of(
                 button("no", "no")
         ));
+    }
+
+    public static ReplyKeyboard nextAccept() {
+        return simpleMarkupFrom(List.of(
+                button("next", "next"),
+                button("accept", "accept"))
+        );
     }
 
     private static InlineKeyboardMarkup simpleMarkupFrom(List<InlineKeyboardButton> buttons) {
