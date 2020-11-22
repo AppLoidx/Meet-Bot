@@ -20,6 +20,8 @@ public class UserInfo {
 
     private Sex sex;
 
+    private String name;
+
     private int birthYear;
     private String photoId;
 
