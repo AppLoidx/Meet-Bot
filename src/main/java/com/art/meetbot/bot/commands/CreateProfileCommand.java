@@ -32,6 +32,11 @@ public class CreateProfileCommand implements RequestHandler {
         commandReg.setState(0);
         commandReg.setSeqName("create-profile-seq");
         commandRegRepo.save(commandReg);
+
+        // remove old user data
+        userRepo.findByTelegramId(String.valueOf(message.getChatId()))
+                .ifPresent(userRepo::delete);
+
         return MessageUtils.sendText("Let's start creating a profile. \nAnswer a series of questions. \n\nRemember that this data will be seen by other users \n Old profile deleted \n Enter your date of birth", message);
     }
 }
