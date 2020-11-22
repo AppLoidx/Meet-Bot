@@ -9,7 +9,7 @@ public enum Sex {
     public static Sex getGender(String text) {
         return switch (text) {
             case ("male") -> MALE;
-            case ("feamle") -> FEMALE;
+            case ("female") -> FEMALE;
             default -> ANOTHER;
         };
     }
