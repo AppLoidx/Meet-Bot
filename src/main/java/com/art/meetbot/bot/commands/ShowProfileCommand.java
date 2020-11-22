@@ -37,21 +37,23 @@ public class ShowProfileCommand implements RequestHandler {
         Optional<User> byTelegramId = userRepo.findByTelegramId(String.valueOf(message.getChatId()));
 
         return byTelegramId.map(user -> {
+            if (user.getUserInfo().getPhotoId() != null) {
+                try {
+                    MeetBot.instance.execute(SendPhoto.builder()
+                            .photo(new InputFile(user.getUserInfo().getPhotoId()))
+                            .chatId(String.valueOf(message.getChatId()))
+                            .build());
+                } catch (TelegramApiException e) {
+                    e.printStackTrace();
+                }
+            }
 
-                    try {
-                        MeetBot.instance.execute(SendPhoto.builder()
-                                .photo(new InputFile(user.getUserInfo().getPhotoId()))
-                                .chatId(String.valueOf(message.getChatId()))
-                                .build());
-                    } catch (TelegramApiException e) {
-                        e.printStackTrace();
-                    }
 
-                    return SendMessage.builder()
+            return SendMessage.builder()
                     .chatId(String.valueOf(message.getChatId()))
                     .text("Your profile:\n\n" + profileInfo(user))
                     .build();
-        } ).orElse(
+        }).orElse(
                 MessageUtils.sendText("You don't have a profile. Please, use command /createprofile", message)
         );
 
@@ -61,6 +63,7 @@ public class ShowProfileCommand implements RequestHandler {
         UserInfo userInfo = user.getUserInfo();
         String answer = "Birth year: " + userInfo.getBirthYear();
         answer += "\nSex: " + userInfo.getSex().toString();
+        answer += "\nDescription: " + userInfo.getDescription();
 
         return answer;
 
