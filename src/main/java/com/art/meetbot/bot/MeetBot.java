@@ -57,6 +57,7 @@ public class MeetBot extends TelegramLongPollingBot {
 
                 message = update.getCallbackQuery().getMessage();
                 message.setText(update.getCallbackQuery().getData());
+                log.debug("Add callback data " + message.getText());
             } else {
                 message = update.getMessage();
             }
