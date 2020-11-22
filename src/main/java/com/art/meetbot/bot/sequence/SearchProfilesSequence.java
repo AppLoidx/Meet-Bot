@@ -22,6 +22,7 @@ import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Sequence("searching-profiles-seq")
@@ -46,10 +47,21 @@ public class SearchProfilesSequence implements SequenceHandler {
                     log.warn("Command reg is not found for chat " + message.getChatId());
                     return new CommandReg();
                 });
-        List<User> users = userRepo.findAll();
+        List<User> allUsers = userRepo.findAll();
+
+        List<MatchedPeople> matches = matchedPeopleRepo.findAllByTelegramIdFirstIsOrTelegramIdSecondIs(
+                String.valueOf(message.getChatId()), String.valueOf(message.getChatId())
+        );
+
+        List<User> users = allUsers.stream()
+                .filter(u -> matches.stream()
+                        .noneMatch(mp -> u.getTelegramId().equals(mp.getTelegramIdFirst()) ||
+                                         u.getTelegramId().equals(mp.getTelegramIdSecond())))
+                .collect(Collectors.toList());
+
         if (message.getText().equals("accept")) {
             if (state != 0) {
-                acceptUser(message.getChatId(), users.get(state-1));
+                acceptUser(message.getChatId(), users.get(state - 1));
             } else {
                 log.warn("user send accept on 1 question");
             }
@@ -95,9 +107,9 @@ public class SearchProfilesSequence implements SequenceHandler {
     private void acceptUser(Long chatId, User user) {
         boolean isMatched = matchedPeopleRepo.findAll().stream()
                 .anyMatch(entity -> entity.getTelegramIdSecond().equals(chatId.toString())
-                        && entity.getTelegramIdFirst().equals(user.getTelegramId()));
+                                    && entity.getTelegramIdFirst().equals(user.getTelegramId()));
 
-        if(isMatched){
+        if (isMatched) {
             String reciprocity = "You have reciprocity!\n";
             String message = makeMessageFromUserInfoWithName(
                     userRepo.findByTelegramId(chatId.toString()).get().getUserInfo());
@@ -117,7 +129,7 @@ public class SearchProfilesSequence implements SequenceHandler {
             } catch (TelegramApiException e) {
                 log.warn("Can't send message to user with chat id" + user.getTelegramId());
             }
-        }else {
+        } else {
             MatchedPeople matchedPeople = new MatchedPeople();
             matchedPeople.setTelegramIdFirst(chatId.toString());
             matchedPeople.setTelegramIdSecond(user.getTelegramId());
@@ -132,8 +144,8 @@ public class SearchProfilesSequence implements SequenceHandler {
         String description = userInfo.getDescription() == null ? "" : userInfo.getDescription();
 
         return "Next user. \nGender:" + userInfo.getSex() +
-                "\nBirth year:" + userInfo.getBirthYear() +
-                "\nDescription:" + description;
+               "\nBirth year:" + userInfo.getBirthYear() +
+               "\nDescription:" + description;
     }
 
     private String makeMessageFromUserInfoWithName(UserInfo userInfo) {
@@ -144,7 +156,7 @@ public class SearchProfilesSequence implements SequenceHandler {
         String message = makeMessageFromUserInfo(userInfo);
         String description = userInfo.getName() == null ? "" : userInfo.getName();
 
-        return message+  "\nName:" + userInfo.getName();
+        return message + "\nName:" + userInfo.getName();
     }
 
     private void sendPhoto(Long chatId, String photoId) {
