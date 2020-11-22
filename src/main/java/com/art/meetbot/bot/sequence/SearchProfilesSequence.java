@@ -47,17 +47,8 @@ public class SearchProfilesSequence implements SequenceHandler {
                     log.warn("Command reg is not found for chat " + message.getChatId());
                     return new CommandReg();
                 });
-        List<User> allUsers = userRepo.findAll();
 
-        List<MatchedPeople> matches = matchedPeopleRepo.findAllByTelegramIdFirstIsOrTelegramIdSecondIs(
-                String.valueOf(message.getChatId()), String.valueOf(message.getChatId())
-        );
-
-        List<User> users = allUsers.stream()
-                .filter(u -> matches.stream()
-                        .noneMatch(mp -> u.getTelegramId().equals(mp.getTelegramIdFirst()) ||
-                                         u.getTelegramId().equals(mp.getTelegramIdSecond())))
-                .collect(Collectors.toList());
+        List<User> users = userRepo.findAll();
 
         if (message.getText().equals("accept")) {
             if (state != 0) {
