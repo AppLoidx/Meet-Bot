@@ -4,9 +4,7 @@ import com.art.meetbot.bot.handle.Sequence;
 import com.art.meetbot.bot.handle.SequenceHandler;
 import com.art.meetbot.bot.util.KeyboardFactory;
 import com.art.meetbot.bot.util.MessageUtils;
-import com.art.meetbot.entity.cache.NameSeqCache;
 import com.art.meetbot.entity.register.CommandReg;
-import com.art.meetbot.entity.repo.cache.NameSeqCacheRepo;
 import com.art.meetbot.entity.repo.register.CommandRegRepo;
 import com.art.meetbot.entity.repo.user.UserRepo;
 import com.art.meetbot.entity.user.Sex;
@@ -28,12 +26,10 @@ import java.util.List;
 @Component
 public class CreateProfileSequence implements SequenceHandler {
     private final CommandRegRepo commandRegRepo;
-    private final NameSeqCacheRepo nameSeqCacheRepo;
     private final UserRepo userRepo;
 
-    public CreateProfileSequence(CommandRegRepo commandRegRepo, NameSeqCacheRepo nameSeqCacheRepo, UserRepo userRepo) {
+    public CreateProfileSequence(CommandRegRepo commandRegRepo, UserRepo userRepo) {
         this.commandRegRepo = commandRegRepo;
-        this.nameSeqCacheRepo = nameSeqCacheRepo;
         this.userRepo = userRepo;
     }
 
@@ -49,16 +45,11 @@ public class CreateProfileSequence implements SequenceHandler {
                     return new CommandReg();
                 });
 
-        NameSeqCache nameSeqCache =
-                nameSeqCacheRepo.findByChatId(message.getChatId()).orElse(new NameSeqCache(message.getChatId()));
-
         User user = userRepo.findByTelegramId(message.getChatId().toString())
                 .orElse(new User(String.valueOf(message.getChatId())));
 
         switch (state) {
             case 0 -> {
-                nameSeqCache.setAns1(message.getText());
-                nameSeqCacheRepo.save(nameSeqCache);
 
                 user.setUserInfo(new UserInfo());
 
@@ -78,8 +69,6 @@ public class CreateProfileSequence implements SequenceHandler {
                         .build();
             }
             case 1 -> {
-                nameSeqCache.setAns2(message.getText());
-                nameSeqCacheRepo.save(nameSeqCache);
                 changeState(2, commandReg);
                 user.getUserInfo().setSex(Sex.getGender(message.getText()));
 
@@ -99,7 +88,7 @@ public class CreateProfileSequence implements SequenceHandler {
                     log.debug("Message has a photo");
                     receivedPhoto(message, user);
                     userRepo.save(user);
-                    deleteSeq(commandReg, nameSeqCache);
+                    commandRegRepo.delete(commandReg);
                     return MessageUtils.sendText("Successfully created profile", message);
                 } else {
                     return SendMessage.builder()
@@ -113,16 +102,11 @@ public class CreateProfileSequence implements SequenceHandler {
         }
 
         log.warn("something strange");
-        deleteSeq(commandReg, nameSeqCache);
+        commandRegRepo.delete(commandReg);
         return SendMessage.builder()
                 .text("Command not found")
                 .chatId(String.valueOf(message.getChatId()))
                 .build();
-    }
-
-    private void deleteSeq(CommandReg commandReg, NameSeqCache nameSeqCache) {
-        nameSeqCacheRepo.delete(nameSeqCache);
-        commandRegRepo.delete(commandReg);
     }
 
     private void receivedPhoto(Message message, User user) {
