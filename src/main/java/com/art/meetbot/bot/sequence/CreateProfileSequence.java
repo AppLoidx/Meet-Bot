@@ -48,6 +48,7 @@ public class CreateProfileSequence implements SequenceHandler {
                     log.warn("Command reg is not found for chat " + message.getChatId());
                     return new CommandReg();
                 });
+
         NameSeqCache nameSeqCache =
                 nameSeqCacheRepo.findByChatId(message.getChatId()).orElse(new NameSeqCache(message.getChatId()));
 
@@ -57,13 +58,15 @@ public class CreateProfileSequence implements SequenceHandler {
             case 0 -> {
                 nameSeqCache.setAns1(message.getText());
                 nameSeqCacheRepo.save(nameSeqCache);
-                changeState(1, commandReg);
+
                 user.setUserInfo(new UserInfo());
 
                 try {
                     user.getUserInfo().setBirthYear(Integer.parseInt(message.getText()));
+                    changeState(1, commandReg);
                 } catch (NumberFormatException ignored) {
-                    log.debug("user send not a year of birth with id" + message.getChatId());
+                    log.debug("user send not a year of birth with id " + message.getChatId());
+                    return MessageUtils.sendText("Please, input a number!", message);
                 }
 
                 userRepo.save(user);
