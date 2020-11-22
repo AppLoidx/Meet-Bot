@@ -61,7 +61,8 @@ public class ShowProfileCommand implements RequestHandler {
 
     private String profileInfo(User user) {
         UserInfo userInfo = user.getUserInfo();
-        String answer = "Birth year: " + userInfo.getBirthYear();
+        String answer = "Name: " + userInfo.getName();
+        answer += "\nBirth year: " + userInfo.getBirthYear();
         answer += "\nSex: " + userInfo.getSex().toString();
         answer += "\nDescription: " + userInfo.getDescription();
 
