@@ -17,7 +17,10 @@ public class UserInfo {
     private UUID uuid;
 
     private String description;
+
+    @Enumerated(EnumType.STRING)
     private Sex sex;
+
     private int birthYear;
     private String photoId;
 
